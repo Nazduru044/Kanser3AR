@@ -6,37 +6,37 @@
     <title>Kanser Farkındalık AR</title>
 
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
 
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
+        body { margin: 0; overflow: hidden; background: #000; font-family: sans-serif; }
         
-        #start-screen {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); z-index: 9999;
+        /* Başlat Ekranı - Kamera izni için bu buton ŞART */
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 10000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white; text-align: center;
         }
         #start-button {
-            padding: 15px 45px; font-size: 20px; font-weight: bold;
-            background-color: #e91e63; color: white;
-            border: none; border-radius: 50px; cursor: pointer;
-            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+            padding: 20px 50px; font-size: 22px; background: #e91e63;
+            color: white; border: none; border-radius: 50px; cursor: pointer;
+            font-weight: bold; box-shadow: 0 0 20px rgba(233, 30, 99, 0.5);
         }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="start-screen">
-        <button id="start-button">DENEYİMİ BAŞLAT</button>
-        <p style="margin-top:20px; padding: 0 20px;">Lütfen kamera izni verin ve<br>görseli kameraya gösterin.</p>
+    <div id="start-overlay">
+        <button id="start-button">AR DENEYİMİNİ BAŞLAT</button>
+        <p style="margin-top: 20px; opacity: 0.8;">Lütfen kamera izni verin.</p>
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./kanser/kanser.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
+        mindar-image="imageTargetSrc: ./kanser/kanser.mind; autoStart: false; uiScanning: no;" 
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights, preserveDrawingBuffer: true" 
+        renderer="colorManagement: true, physicallyCorrectLights, antialias: true" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
@@ -58,42 +58,38 @@
         <a-entity id="target" mindar-image-target="targetIndex: 0">
             <a-video src="#kanserVideo" 
                      width="1" 
-                     height="0.56" 
+                     height="0.6" 
                      position="0 0 0" 
-                     material="shader: flat; transparent: true">
+                     material="shader: flat; transparent: true; opacity: 1">
             </a-video>
         </a-entity>
     </a-scene>
 
     <script>
         const startButton = document.querySelector('#start-button');
-        const startScreen = document.querySelector('#start-screen');
+        const overlay = document.querySelector('#start-overlay');
+        const sceneEl = document.querySelector('a-scene');
         const video = document.querySelector('#kanserVideo');
         const audio = document.querySelector('#kanserSes');
-        const sceneEl = document.querySelector('a-scene');
         const target = document.querySelector('#target');
 
         startButton.addEventListener('click', () => {
-            startScreen.classList.add('hidden');
+            overlay.classList.add('hidden');
             
-            // AR Sistemini zorla başlat
+            // 1. Kamera sistemini başlat (Bu komut kamera izni ister)
             const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start();
+            arSystem.start(); 
 
-            // iOS ve Android için kilit açma (Muted:true olsa bile video.play şart)
-            video.play().then(() => {
-                video.pause();
-                console.log("Video yüklendi ve hazır.");
-            });
-            audio.play().then(() => {
-                audio.pause();
-                console.log("Ses yüklendi ve hazır.");
-            });
+            // 2. Video ve Ses kilitlerini kaldır
+            video.play().then(() => video.pause());
+            audio.play().then(() => audio.pause());
+            
+            console.log("Sistem başlatıldı.");
         });
 
-        // Takip olayları
+        // Hedef takibi
         target.addEventListener("targetFound", () => {
-            console.log("Hedef bulundu, içerik başlatılıyor...");
+            console.log("Resim bulundu!");
             video.play();
             audio.play();
         });
