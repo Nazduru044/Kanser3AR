@@ -11,7 +11,6 @@
     <style>
         body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
         
-        /* Başlangıç Ekranı */
         #start-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 0, 0, 0.9); z-index: 9999;
@@ -19,10 +18,10 @@
             color: white; text-align: center;
         }
         #start-button {
-            padding: 15px 40px; font-size: 20px; font-weight: bold;
-            background-color: #ff4757; color: white;
-            border: none; border-radius: 30px; cursor: pointer;
-            margin-bottom: 20px;
+            padding: 15px 45px; font-size: 20px; font-weight: bold;
+            background-color: #e91e63; color: white;
+            border: none; border-radius: 50px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
         }
         .hidden { display: none !important; }
     </style>
@@ -31,25 +30,38 @@
 
     <div id="start-screen">
         <button id="start-button">DENEYİMİ BAŞLAT</button>
-        <p>Kamera izni verin ve<br>görseli kameraya tutun.</p>
+        <p style="margin-top:20px; padding: 0 20px;">Lütfen kamera izni verin ve<br>görseli kameraya gösterin.</p>
     </div>
 
     <a-scene 
-        mindar-image="imageTargetSrc: ./kanser/kanser.mind; autoStart: false;" 
+        mindar-image="imageTargetSrc: ./kanser/kanser.mind; autoStart: false; filterMinCF:0.0001; filterBeta: 0.001;" 
         color-space="sRGB" 
-        renderer="colorManagement: true, physicallyCorrectLights" 
+        renderer="colorManagement: true, physicallyCorrectLights, preserveDrawingBuffer: true" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="kanserVideo" src="./kanser/kanser.mp4" preload="auto" loop="true" muted="true" playsinline webkit-playsinline></video>
-            <audio id="kanserSes" src="./kanser/kanser.mp3" preload="auto" loop="true"></audio>
+            <video id="kanserVideo" 
+                   src="./kanser/kanser.mp4" 
+                   preload="auto" 
+                   loop="true" 
+                   muted="true" 
+                   playsinline 
+                   webkit-playsinline 
+                   crossorigin="anonymous">
+            </video>
+            <audio id="kanserSes" src="./kanser/kanser.mp3" preload="auto" loop="true" crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
         <a-entity id="target" mindar-image-target="targetIndex: 0">
-            <a-video src="#kanserVideo" width="1" height="0.56" position="0 0 0"></a-video>
+            <a-video src="#kanserVideo" 
+                     width="1" 
+                     height="0.56" 
+                     position="0 0 0" 
+                     material="shader: flat; transparent: true">
+            </a-video>
         </a-entity>
     </a-scene>
 
@@ -61,26 +73,31 @@
         const sceneEl = document.querySelector('a-scene');
         const target = document.querySelector('#target');
 
-        // Başlat butonuna basıldığında
         startButton.addEventListener('click', () => {
             startScreen.classList.add('hidden');
             
-            // AR Sistemini başlat
+            // AR Sistemini zorla başlat
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start();
 
-            // Ses ve videoyu tarayıcıya tanıt (play/pause yaparak kilitlerini açıyoruz)
-            video.play().then(() => video.pause());
-            audio.play().then(() => audio.pause());
+            // iOS ve Android için kilit açma (Muted:true olsa bile video.play şart)
+            video.play().then(() => {
+                video.pause();
+                console.log("Video yüklendi ve hazır.");
+            });
+            audio.play().then(() => {
+                audio.pause();
+                console.log("Ses yüklendi ve hazır.");
+            });
         });
 
-        // Hedef bulunduğunda video ve sesi aynı anda başlat
+        // Takip olayları
         target.addEventListener("targetFound", () => {
+            console.log("Hedef bulundu, içerik başlatılıyor...");
             video.play();
             audio.play();
         });
 
-        // Hedef kaybedildiğinde durdur
         target.addEventListener("targetLost", () => {
             video.pause();
             audio.pause();
