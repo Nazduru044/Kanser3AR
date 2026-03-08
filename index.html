@@ -3,102 +3,69 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta charset="UTF-8">
-    <title>Kanser Farkındalık WebAR</title>
-
+    <title>Kanser AR Projesi</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.2/dist/mindar-image-aframe.prod.js"></script>
-
     <style>
-        body { margin: 0; overflow: hidden; background-color: #000; font-family: sans-serif; }
-        
-        /* Giriş Ekranı (Kamera izni ve Ses kilidini açmak için zorunludur) */
-        #overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 10000;
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-            color: white; text-align: center;
-        }
+        body { margin: 0; overflow: hidden; background: #000; }
         #start-btn {
-            padding: 20px 60px; font-size: 22px; font-weight: bold;
-            background: #e91e63; color: white; border: none;
-            border-radius: 50px; cursor: pointer; margin-bottom: 20px;
-            box-shadow: 0 0 20px rgba(233, 30, 99, 0.5);
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            padding: 20px 40px; font-size: 20px; background: #e91e63; color: white;
+            border: none; border-radius: 50px; z-index: 10000; cursor: pointer;
         }
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
-    <div id="overlay">
-        <button id="start-btn">DENEYİMİ BAŞLAT</button>
-        <p>Lütfen kamera izni verin ve <br> hedef görseli kameraya tutun.</p>
-    </div>
+    <button id="start-btn">SİSTEMİ BAŞLAT</button>
 
     <a-scene 
         mindar-image="imageTargetSrc: ./kanser/kanser.mind; autoStart: false; uiScanning: no;" 
-        color-space="sRGB" 
+        embedded color-space="sRGB" 
         renderer="colorManagement: true, physicallyCorrectLights" 
         vr-mode-ui="enabled: false" 
         device-orientation-permission-ui="enabled: false">
         
         <a-assets>
-            <video id="kanserVideo" 
-                   src="./kanser/kanser.mp4" 
-                   preload="auto" 
-                   loop="true" 
-                   muted="true" 
-                   playsinline 
-                   webkit-playsinline 
-                   crossorigin="anonymous">
-            </video>
+            <video id="kanserVideo" src="./kanser/kanser.mp4" 
+                   preload="auto" loop="true" muted="true" 
+                   playsinline webkit-playsinline crossorigin="anonymous"></video>
             <audio id="kanserSes" src="./kanser/kanser.mp3" preload="auto" loop="true" crossorigin="anonymous"></audio>
         </a-assets>
 
         <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-        <a-entity id="targetEntity" mindar-image-target="targetIndex: 0">
-            <a-video src="#kanserVideo" 
-                     width="1" 
-                     height="0.6" 
-                     position="0 0 0" 
-                     material="shader: flat; transparent: true;">
-            </a-video>
+        <a-entity id="target" mindar-image-target="targetIndex: 0">
+            <a-video src="#kanserVideo" width="1" height="0.6" material="shader: flat;"></a-video>
         </a-entity>
     </a-scene>
 
     <script>
-        const startBtn = document.querySelector('#start-btn');
-        const overlay = document.querySelector('#overlay');
+        const btn = document.querySelector('#start-btn');
         const video = document.querySelector('#kanserVideo');
         const audio = document.querySelector('#kanserSes');
         const sceneEl = document.querySelector('a-scene');
-        const targetEntity = document.querySelector('#targetEntity');
 
-        // Kullanıcı butona bastığında her şeyi başlat
-        startBtn.addEventListener('click', () => {
-            overlay.classList.add('hidden');
+        btn.addEventListener('click', () => {
+            btn.classList.add('hidden');
             
-            // 1. MindAR sistemini başlat (Bu komut kamera izni isteyecektir)
+            // Kamera izni iste ve AR'ı başlat
             const arSystem = sceneEl.systems["mindar-image-system"];
             arSystem.start(); 
 
-            // 2. Video ve Sesin kilitlerini aç (iPhone/Android politikası gereği)
-            video.play().then(() => video.pause());
-            audio.play().then(() => audio.pause());
-            
-            console.log("Sistem başlatıldı, kamera bekleniyor...");
+            // Video ve Sesi hazırla
+            video.play(); video.pause();
+            audio.play(); audio.pause();
         });
 
-        // Hedef görüntü bulunduğunda içerikleri oynat
-        targetEntity.addEventListener("targetFound", () => {
-            console.log("Hedef bulundu!");
+        const target = document.querySelector('#target');
+        target.addEventListener("targetFound", () => {
             video.play();
             audio.play();
         });
 
-        // Hedef görüntü kaybedildiğinde içerikleri durdur
-        targetEntity.addEventListener("targetLost", () => {
-            console.log("Hedef kayboldu.");
+        target.addEventListener("targetLost", () => {
             video.pause();
             audio.pause();
         });
